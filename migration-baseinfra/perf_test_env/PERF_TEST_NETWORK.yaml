@@ -5,13 +5,13 @@ Description: 'VPC template for the AWS Migration Immersion Day - Source Environm
 Parameters:
   DomainName:
     Description: >-
-      The fully qualified name for the source VPC, such as onpremsim.env. The
+      The fully qualified name for the source VPC, such as perftest.env. The
       name doesn't need to be publicly resolvable; it will resolve inside your
       VPC only.
     Type: String
     MinLength: '5'
     MaxLength: '16'
-    Default: onpremsim.env
+    Default: perftest.env
   AWSRegionArch2AMI:
     Description: The latest AMI ID for Amazon Linux
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
@@ -614,11 +614,11 @@ Resources:
                   SHELL=/bin/bash
                   PATH=/sbin:/bin:/usr/sbin:/usr/bin
                   MAILTO=root
-                  */2 * * * * root ab -n 5 -c 2 http://wordpress-web.onpremsim.env/
-                  */2 * * * * root ab -n 5 -c 2 https://ofbiz-web.onpremsim.env:8443/accounting/control/main
-                  */3 * * * * root curl -k http://wordpress-web.onpremsim.env/
-                  */3 * * * * root curl -k https://ofbiz-web.onpremsim.env:8443/accounting/control/main
-                  */2 * * * * root wget --no-check-certificate https://ofbiz-web.onpremsim.env:8443/accounting/control/main -O /tmp/main.tmp
+                  */2 * * * * root ab -n 5 -c 2 http://wordpress-web.perftest.env/
+                  */2 * * * * root ab -n 5 -c 2 https://ofbiz-web.perftest.env:8443/accounting/control/main
+                  */3 * * * * root curl -k http://wordpress-web.perftest.env/
+                  */3 * * * * root curl -k https://ofbiz-web.perftest.env:8443/accounting/control/main
+                  */2 * * * * root wget --no-check-certificate https://ofbiz-web.perftest.env:8443/accounting/control/main -O /tmp/main.tmp
                   */2 * * * * root printf 'GET /accounting/control/main HTTP/1.1\r\nHost: ofbiz-web\r\n\r\n' | ncat --ssl ofbiz-web 8443
               mode: '000644'
               owner: root

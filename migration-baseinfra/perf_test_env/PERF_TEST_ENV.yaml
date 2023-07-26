@@ -9,13 +9,13 @@ Description: >-
 Parameters:
   DomainName:
     Description: >-
-      The fully qualified name for the source VPC, such as onpremsim.env. The
+      The fully qualified name for the source VPC, such as perftest.env. The
       name doesn't need to be publicly resolvable; it will resolve inside your
       VPC only.
     Type: String
     MinLength: '5'
     MaxLength: '16'
-    Default: onpremsim.env
+    Default: perftest.env
   AdminPassword:
     Description: >-
       The password for the Bastion Administrator. must contain exactly 8
