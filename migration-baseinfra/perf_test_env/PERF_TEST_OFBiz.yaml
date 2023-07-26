@@ -10,13 +10,13 @@ Description: >-
 Parameters:
   DomainName:
     Description: >-
-      The fully qualified name for the source VPC, such as onpremsim.env. The
+      The fully qualified name for the source VPC, such as perftest.env. The
       name doesn't need to be publicly resolvable; it will resolve inside your
       VPC only.
     Type: String
     MinLength: '5'
     MaxLength: '16'
-    Default: onpremsim.env
+    Default: perftest.env
   WEBInstanceType:
     Description: WebServer EC2 instance type
     Type: String
@@ -386,7 +386,7 @@ Resources:
                   sed -i 's/jdbc-password="ofbiz"/jdbc-password="${DBPassword}"/g' $ofbizconfig
                   sed -i 's/127.0.0.1/ofbiz-db.${DomainName}/g' $ofbizconfig
                   ofbizsecurity=/opt/apache-ofbiz-18.12.05/framework/security/config/security.properties
-                  sed -i 's/host-headers-allowed=/host-headers-allowed=ofbiz-web,ofbiz-web.onpremsim.env,onpremsim.env/g' $ofbizsecurity
+                  sed -i 's/host-headers-allowed=/host-headers-allowed=ofbiz-web,ofbiz-web.perftest.env,perftest.env/g' $ofbizsecurity
               mode: '000500'
               owner: root
               group: root

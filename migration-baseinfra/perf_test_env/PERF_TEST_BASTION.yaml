@@ -36,9 +36,9 @@ Parameters:
     Default: 0.0.0.0/0
     AllowedPattern: '^([0-9]+\.){3}[0-9]+\/[0-9]+$'
   WindowsLastestAmiID:
-    Description: The latest AMI ID for Windows 2019 from Amazon
+    Description: The latest AMI ID for Windows 2022 from Amazon
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
-    Default: /aws/service/ami-windows-latest/Windows_Server-2019-English-Full-Base
+    Default: /aws/service/ami-windows-latest/Windows_Server-2022-English-Full-Base
   InstanceProfile:
     Description: The instance profile for migration execution server
     Type: String
