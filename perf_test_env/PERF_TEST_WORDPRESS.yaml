@@ -18,6 +18,12 @@ Parameters:
     MinLength: '5'
     MaxLength: '16'
     Default: perftest.env
+  KeyPairName:
+    Description: >-
+      Name of key pair launched with EC2 instances
+    Type: String
+    ConstraintDescription: >-
+      Must provide the name of key pair launched with EC2 instances
   WEBInstanceType:
     Description: WebServer EC2 instance type
     Type: String
@@ -250,6 +256,7 @@ Resources:
               test: !Sub | 
                 $(mysql ${DBName} -u root --password='${RootPassword}' >/dev/null 2>&1 </dev/null); (( $? != 0 ))
     Properties:
+      KeyName: !Ref KeyPairName
       ImageId: !FindInMap 
         - RegionMap
         - !Ref 'AWS::Region'
@@ -410,6 +417,7 @@ Resources:
                     wp post create --post_title='Migration Immersion Day' --post_content='We are migrating our internal servers to AWS!' --post_status=publish 
                     wp theme install blog64 --activate    
     Properties:
+      KeyName: !Ref KeyPairName
       ImageId: !FindInMap 
         - RegionMap
         - !Ref 'AWS::Region'
