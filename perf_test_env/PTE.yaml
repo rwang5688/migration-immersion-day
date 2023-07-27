@@ -1,0 +1,227 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  PTE template to create the Performance Test Environment. Also, you are
+  solely responsible for complying with the license terms for the software
+  downloaded and installed by this template. By creating a stack from this
+  template, you are agreeing to such terms.
+
+#Parameters
+Parameters:
+  AdminPassword:
+    Description: >-
+      The password for the Bastion Administrator. must contain exactly 8
+      characters. please use alphanumeric+special characters. at least one
+      number, one upper case, one lower case and one special (#@$)
+    NoEcho: 'true'
+    Type: String
+    MinLength: '8'
+    MaxLength: '8'
+    ConstraintDescription: >-
+      must contain exactly 8 characters. please use alphanumeric+special
+      characters. at least one number, one upper case, one lower case and one
+      special (#@$)
+  RootPassword:
+    NoEcho: 'true'
+    Description: >-
+      SSH password for user 'user'. This user has sudo power. must contain
+      exactly 8 characters. please use only alphanumeric characters.
+    Type: String
+    MinLength: '8'
+    MaxLength: '8'
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: >-
+      must contain exactly 8 characters. please use only alphanumeric
+      characters.
+  EC2ModelBastion:
+    Description: Model of EC2 Servers in the source environment - Windows Bastion
+    Type: String
+    AllowedValues:
+      - t3.micro
+      - t3.small
+      - t3.medium
+    Default: t3.medium
+  EC2ModelLinux:
+    Description: Model of EC2 Servers in the source environment - Linux
+    Type: String
+    AllowedValues:
+      - t3.nano
+      - t3.micro
+      - t3.small
+      - t3.medium
+    Default: t3.small
+  LaunchBastion:
+    Description: Launch Bastion Server
+    Default: 'TRUE'
+    Type: String
+    AllowedValues:
+      - 'TRUE'
+      - 'FALSE'
+  LaunchOFBiz:
+    Description: Launch OFBiz App
+    Default: 'TRUE'
+    Type: String
+    AllowedValues:
+      - 'TRUE'
+      - 'FALSE'
+  LaunchWordpress:
+    Description: Launch Wordpress App
+    Default: 'TRUE'
+    Type: String
+    AllowedValues:
+      - 'TRUE'
+      - 'FALSE'
+  DomainName:
+    Description: >-
+      The fully qualified name for the source VPC, such as perftest.env. The
+      name doesn't need to be publicly resolvable; it will resolve inside your
+      VPC only.
+    Type: String
+    MinLength: '5'
+    MaxLength: '16'
+    Default: perftest.env
+  SourceCidrForRDP:
+    Description: >-
+      IP Cidr from which you are likely to RDP into the instances. You can add
+      rules later by modifying the created security groups e.g. 54.32.98.160/32
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: 0.0.0.0/0
+    AllowedPattern: '^([0-9]+\.){3}[0-9]+\/[0-9]+$'
+  CfnS3Bucket:
+    Description: S3 Bucket with CFN template files
+    Type: String
+    Default: <CloudFormation template S3 bucket name>
+  CfnS3Path:
+    Description: S3 Path with CFN template files
+    Type: String
+    Default: perf_test_env
+
+#Metadata
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: Perf Test Server - Configuration
+        Parameters:
+          - AdminPassword
+          - RootPassword
+          - EC2ModelBastion
+          - EC2ModelLinux
+      - Label:
+          default: Deploy nested stacks
+        Parameters:
+          - LaunchBastion
+          - LaunchOFBiz
+          - LaunchWordpress
+      - Label:
+          default: Networking
+        Parameters:
+          - DomainName
+          - SourceCidrForRDP
+      - Label:
+          default: CloudFormation template location
+        Parameters:
+          - CfnS3Bucket
+          - CfnS3Path
+
+#Conditions
+Conditions:
+  CreateBastion: !Equals 
+    - !Ref LaunchBastion
+    - 'TRUE'
+  CreateOFBiz: !Equals 
+    - !Ref LaunchOFBiz
+    - 'TRUE'
+  CreateWordpress: !Equals 
+    - !Ref LaunchWordpress
+    - 'TRUE'
+
+#Resources
+Resources:
+  PERFTESTNETWORK:
+    Type: 'AWS::CloudFormation::Stack'
+    Properties:
+      TemplateURL: !Sub https://${CfnS3Bucket}.s3.amazonaws.com/${CfnS3Path}/PERF_TEST_NETWORK.yaml
+      Parameters:
+        DomainName: !Ref DomainName
+      Tags:
+        - Key: Env
+          Value: PerfTest
+        - Key: Stack
+          Value: PERFTESTNETWORK
+
+  PERFTESTBASTION:
+    Type: 'AWS::CloudFormation::Stack'
+    Condition: CreateBastion
+    Properties:
+      TemplateURL: !Sub https://${CfnS3Bucket}.s3.amazonaws.com/${CfnS3Path}/PERF_TEST_BASTION.yaml
+      Parameters:
+        AdminPassword: !Ref AdminPassword
+        BastionSize: !Ref EC2ModelBastion
+        PerfTestVPC: !GetAtt 
+          - PERFTESTNETWORK
+          - Outputs.PerfTestVPC
+        PerfTestPublicSubnet: !GetAtt 
+          - PERFTESTNETWORK
+          - Outputs.PerfTestPublicSubnet
+        SourceCidrForRDP: !Ref SourceCidrForRDP
+      Tags:
+        - Key: Env
+          Value: PerfTest
+        - Key: Stack
+          Value: PERFTESTBASTION
+
+  PERFTESTOFBIZ:
+    Type: 'AWS::CloudFormation::Stack'
+    Condition: CreateOFBiz
+    Properties:
+      TemplateURL: !Sub https://${CfnS3Bucket}.s3.amazonaws.com/${CfnS3Path}/PERF_TEST_OFBiz.yaml
+      Parameters:
+        DomainName: !Ref DomainName
+        PerfTestVPC: !GetAtt 
+          - PERFTESTNETWORK
+          - Outputs.PerfTestVPC
+        PerfTestPrivateSubnet: !GetAtt 
+          - PERFTESTNETWORK
+          - Outputs.PerfTestPrivateSubnet
+        WEBInstanceType: !Ref EC2ModelLinux
+        DBPassword: !Ref RootPassword
+        RootPassword: !Ref RootPassword
+      Tags:
+        - Key: Env
+          Value: PerfTest
+        - Key: Stack
+          Value: PERFTESTOFBIZ
+
+  PERFTESTWORDPRESS:
+    Type: 'AWS::CloudFormation::Stack'
+    Condition: CreateWordpress
+    Properties:
+      TemplateURL: !Sub https://${CfnS3Bucket}.s3.amazonaws.com/${CfnS3Path}/SOURCE_WORDPRESS.yaml
+      Parameters:
+        DomainName: !Ref DomainName
+        PerfTestVPC: !GetAtt 
+          - PERFTESTNETWORK
+          - Outputs.PerfTestVPC
+        PerfTestPrivateSubnet: !GetAtt 
+          - PERFTESTNETWORK
+          - Outputs.PerfTestPrivateSubnet
+        WEBInstanceType: !Ref EC2ModelLinux
+        DBPassword: !Ref RootPassword
+        RootPassword: !Ref RootPassword
+      Tags:
+        - Key: Env
+          Value: PerfTest
+        - Key: Stack
+          Value: PERFTESTWORDPRESS
+
+#Outputs
+Outputs:
+  AWSAccountId:
+    Value: !Ref AWS::AccountId
+  BastionRDP:
+    Condition: CreateBastion
+    Value: !GetAtt 
+      - PERFTESTBASTION
+      - Outputs.BastionRDP

@@ -362,7 +362,7 @@ Resources:
       InstanceType: !Ref DNSandVPNInstanceType
       Tags:
         - Key: Environment
-          Value: Source
+          Value: PerfTest
         - Key: Name
           Value: DO-NOT-TOUCH(DNS)
       NetworkInterfaces:
@@ -392,14 +392,14 @@ Outputs:
     Description: The VPC ID to use for the resources in the Perf Test Environment
     Value: !Ref PerfTestVPC
     Export:
-      Name: 'PTE-PerfTestVPC'
+      Name: 'PerfTestVPC'
   PerfTestPublicSubnet:
     Description: The subnet ID to use for public servers in the Perf Test Environment
     Value: !Ref PerfTestPublicSubnet
     Export:
-      Name: 'PTE-PerfTestPublicSubnet'
+      Name: 'PerfTestPublicSubnet'
   PerfTestPrivateSubnet:
     Description: The subnet ID to use for private servers in the Perf Test Environment
     Value: !Ref PerfTestPrivateSubnet
     Export:
-      Name: 'PTE-PerfTestPrivateSubnet'
+      Name: 'PerfTestPrivateSubnet'

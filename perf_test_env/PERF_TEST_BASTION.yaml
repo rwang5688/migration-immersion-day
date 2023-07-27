@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  Bastion/Execution Server host template for the AWS Migration Immersion Day. Also, you are
+  Bastion/Execution Server template for the Performance Test Environment. Also, you are
   solely responsible for complying with the license terms for the software
   downloaded and installed by this template. By creating a stack from this
   template, you are agreeing to such terms.
@@ -12,7 +12,7 @@ Parameters:
     MinLength: '8'
     MaxLength: '18'
     ConstraintDescription: Please use a complex password.
-  bastionSize:
+  BastionSize:
     Description: ec2 instance size for the bastion host
     Type: String
     AllowedValues:
@@ -20,11 +20,11 @@ Parameters:
       - t3.small
       - t3.large
     Default: t3.medium
-  VPCSource:
-    Description: VPC to place Bastion Host. Preferred is Source Environment
+  PerfTestVPC:
+    Description: VPC to place Bastion Host. Preferred is Perf Test Environment
     Type: 'AWS::EC2::VPC::Id'
-  SubnetSourcePublic:
-    Description: Public Subnet to place Bastion Host. Preferred is Source Environment
+  PerfTestPublicSubnet:
+    Description: Public Subnet to place Bastion Host. Preferred is Perf Test Environment
     Type: 'AWS::EC2::Subnet::Id'
   SourceCidrForRDP:
     Description: >-
@@ -39,21 +39,17 @@ Parameters:
     Description: The latest AMI ID for Windows 2022 from Amazon
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
     Default: /aws/service/ami-windows-latest/Windows_Server-2022-English-Full-Base
-  InstanceProfile:
-    Description: The instance profile for migration execution server
-    Type: String
-    Default: 'migration-factory-lab-MGN-ExeServer-profile'
 
 Resources:
   BastionEIP:
     Type: 'AWS::EC2::EIP'
     Properties:
-      InstanceId: !Ref MIDBastion
+      InstanceId: !Ref PerfTestBastion
   BastionSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Enable RDP
-      VpcId: !Ref VPCSource
+      VpcId: !Ref PerfTestVPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 3389
@@ -63,10 +59,10 @@ Resources:
           FromPort: 8
           ToPort: -1
           CidrIp: 192.168.0.0/16
-  MGNExeServerRole:
+  PerfTestBastionServerRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: 'MGN-ExeServerRole'
+      RoleName: 'PerfTestBastionServerRole'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -79,19 +75,13 @@ Resources:
               - 'sts:AssumeRole'
       Path: /
 
-  MGNExeServerPolicy:
+  PerfTestBastionServerPolicy:
     Type: 'AWS::IAM::ManagedPolicy'
     Properties:
-      ManagedPolicyName: 'MGN-ExeServerPolicy'
+      ManagedPolicyName: 'PerfTestBastionServerPolicy'
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
-          -
-            Effect: Allow
-            Action:
-              - 'iam:PassRole'
-              - 'sts:AssumeRole'
-            Resource: 'arn:aws:iam::*:role/Factory*'
           -
             Effect: Allow
             Action:
@@ -100,16 +90,16 @@ Resources:
               - 'secretsmanager:ListSecrets'
             Resource: !Sub 'arn:aws:secretsmanager:*:${AWS::AccountId}:secret:*'
       Roles:
-        - !Ref MGNExeServerRole
+        - !Ref PerfTestBastionServerRole
 
-  MGNExeServerInsProfile:
+  PerfTestBastionServerInsProfile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
-      InstanceProfileName: 'MGN-ExeServer-profile'
+      InstanceProfileName: 'PerfTestBastionServerInsProfile'
       Roles:
-        - !Ref MGNExeServerRole
+        - !Ref PerfTestBastionServerRole
         
-  MIDBastion:
+  PerfTestBastion:
     Type: 'AWS::EC2::Instance'
     Metadata:
       'AWS::CloudFormation::Init':
@@ -140,10 +130,10 @@ Resources:
                   - |
                     triggers=post.update
                   - |
-                    path=Resources.MIDBastion.Metadata.AWS::CloudFormation::Init
+                    path=Resources.PerfTestBastion.Metadata.AWS::CloudFormation::Init
                   - 'action=cfn-init.exe -v -s '
                   - !Ref 'AWS::StackId'
-                  - ' -r MIDBastion'
+                  - ' -r PerfTestBastion'
                   - ' --configsets bastion_install'
                   - ' --region '
                   - !Ref 'AWS::Region'
@@ -193,19 +183,6 @@ Resources:
                           throw 'Execution failed.'
                       }
                     }
-            
-            'c:\cfn\scripts\downloadCEMF.ps1': 
-              content: !Join
-                - ''
-                - - >-
-                    Import-module c:\cfn\scripts\retry-command.ps1 -Force
-                    
-                    Retry-Command -ScriptBlock {
-                      $Path = $env:TEMP; $Installer = "Migrations.zip";
-                      Invoke-WebRequest "https://ee-assets-prod-us-east-1.s3.amazonaws.com/modules/migration-baseinfra/v6/Bastion/Migrations.zip" -OutFile $Path\$Installer;
-                      Expand-Archive -Path $Path\$Installer -DestinationPath c:\Migrations
-                      Remove-Item $Path\$Installer
-                    }
 
             'c:\cfn\scripts\installchrome.ps1':
               content: !Join
@@ -232,6 +209,7 @@ Resources:
                       Start-Process -FilePath $Path\$Installer -Args "/S" -Verb RunAs -Wait;
                       Remove-Item $Path\$Installer
                     }
+
             'c:\putty.reg':
               source: "https://ee-assets-prod-us-east-1.s3.amazonaws.com/modules/migration-baseinfra/v6/Bastion/putty.reg"
 
@@ -248,7 +226,7 @@ Resources:
                       New-Item -ItemType SymbolicLink -Path 'C:\Users\Administrator\Desktop\' -name 'Putty' -Value 'C:\Program Files\PuTTY\putty.exe';
                       reg import c:\putty.reg;
                     }
-                    
+
             'c:\cfn\scripts\installpython.ps1':
               content: !Join
                 - ''
@@ -267,9 +245,6 @@ Resources:
                       py.exe -m pip install boto3;
                     }
           commands:
-            0-downloadCEMF:
-              command: 'powershell.exe c:\cfn\scripts\downloadCEMF.ps1'
-              waitAfterCompletion: '5'
             1-installchrome:
               command: 'powershell.exe c:\cfn\scripts\installchrome.ps1'
               waitAfterCompletion: '5'
@@ -295,8 +270,8 @@ Resources:
                 -OutFile C:\Users\Administrator\Desktop\Architecture.png
               waitAfterCompletion: '5'
     Properties:
-      InstanceType: !Ref bastionSize
-      IamInstanceProfile: !Ref MGNExeServerInsProfile
+      InstanceType: !Ref BastionSize
+      IamInstanceProfile: !Ref PerfTestBastionServerInsProfile
       ImageId: !Ref WindowsLastestAmiID
       NetworkInterfaces:
         - GroupSet:
@@ -304,21 +279,21 @@ Resources:
           AssociatePublicIpAddress: true
           DeviceIndex: '0'
           DeleteOnTermination: true
-          SubnetId: !Ref SubnetSourcePublic
+          SubnetId: !Ref PerfTestPublicSubnet
       Tags:
         - Key: Environment
-          Value: Source
+          Value: PerfTest
         - Key: Name
-          Value: MID-Bastion
+          Value: PTE-Bastion
       UserData:
         Fn::Base64:
           Fn::Sub:
             - |
               <powershell>
                 net user Administrator "${AdminPass}"
-                cfn-init.exe -v -s ${AWS::StackId} -r MIDBastion --region ${AWS::Region} --configsets bastion_install
+                cfn-init.exe -v -s ${AWS::StackId} -r PerfTestBastion --region ${AWS::Region} --configsets bastion_install
                 
-                cfn-signal.exe -e %ERRORLEVEL% --stack ${AWS::StackId} --resource MIDBastion --region ${AWS::Region}
+                cfn-signal.exe -e %ERRORLEVEL% --stack ${AWS::StackId} --resource PerfTestBastion --region ${AWS::Region}
               </powershell>
             - AdminPass: !Ref AdminPassword
 Outputs:
