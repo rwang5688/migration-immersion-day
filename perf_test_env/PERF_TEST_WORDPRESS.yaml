@@ -29,10 +29,10 @@ Parameters:
       - t3.medium
       - t3.large
     ConstraintDescription: must be a valid EC2 instance type.
-  OnPremSimVPC:
+  PerfTestVPC:
     Description: VPC to place Wordpress.
     Type: 'AWS::EC2::VPC::Id'
-  OnPremSimSubnet1:
+  PerfTestPrivateSubnet:
     Description: Private Subnet to place Wordpress.
     Type: 'AWS::EC2::Subnet::Id'
   SSHLocation:
@@ -94,7 +94,7 @@ Resources:
   WebServerSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      VpcId: !Ref OnPremSimVPC
+      VpcId: !Ref PerfTestVPC
       GroupDescription: Enable HTTP access via port 80 locked down to the load balancer + SSH access
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -112,7 +112,7 @@ Resources:
   DatabaseSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      VpcId: !Ref OnPremSimVPC
+      VpcId: !Ref PerfTestVPC
       GroupDescription: Enable mariadb access via port 3306 locked down to the load balancer + SSH access
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -257,13 +257,13 @@ Resources:
       InstanceType: !Ref WEBInstanceType
       Tags:
         - Key: Environment
-          Value: Source
+          Value: PerfTest
         - Key: Name
-          Value: MID-Wordpress-DB
+          Value: PTE-Wordpress-DB
       NetworkInterfaces:
         - DeviceIndex: '0'
           AssociatePublicIpAddress: false
-          SubnetId: !Ref OnPremSimSubnet1
+          SubnetId: !Ref PerfTestPrivateSubnet
           GroupSet:
             - !Ref DatabaseSecurityGroup
       UserData: 
@@ -417,13 +417,13 @@ Resources:
       InstanceType: !Ref WEBInstanceType
       Tags:
         - Key: Environment
-          Value: Source
+          Value: PerfTest
         - Key: Name
-          Value: MID-Wordpress-WEB
+          Value: PTE-Wordpress-WEB
       NetworkInterfaces:
         - DeviceIndex: '0'
           AssociatePublicIpAddress: false
-          SubnetId: !Ref OnPremSimSubnet1
+          SubnetId: !Ref PerfTestPrivateSubnet
           GroupSet:
             - !Ref WebServerSecurityGroup
       UserData: 
