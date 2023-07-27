@@ -209,7 +209,7 @@ Resources:
     Type: 'AWS::CloudFormation::Stack'
     Condition: CreateWordpress
     Properties:
-      TemplateURL: !Sub https://${CfnS3Bucket}.s3.amazonaws.com/${CfnS3Path}/SOURCE_WORDPRESS.yaml
+      TemplateURL: !Sub https://${CfnS3Bucket}.s3.amazonaws.com/${CfnS3Path}/PERF_TEST_WORDPRESS.yaml
       Parameters:
         DomainName: !Ref DomainName
         KeyPairName: !Ref KeyPairName
