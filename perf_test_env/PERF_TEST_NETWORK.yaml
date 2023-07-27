@@ -12,6 +12,12 @@ Parameters:
     MinLength: '5'
     MaxLength: '16'
     Default: perftest.env
+  KeyPairName:
+    Description: >-
+      Name of key pair launched with EC2 instances
+    Type: String
+    ConstraintDescription: >-
+      Must provide the name of key pair launched with EC2 instances
   AWSRegionArch2AMI:
     Description: The latest AMI ID for Amazon Linux
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
@@ -358,6 +364,7 @@ Resources:
               owner: root
               group: root
     Properties:
+      KeyName: !Ref KeyPairName
       ImageId: !Ref AWSRegionArch2AMI
       InstanceType: !Ref DNSandVPNInstanceType
       Tags:

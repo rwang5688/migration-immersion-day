@@ -5,6 +5,12 @@ Description: >-
   downloaded and installed by this template. By creating a stack from this
   template, you are agreeing to such terms.
 Parameters:
+  KeyPairName:
+    Description: >-
+      Name of key pair launched with EC2 instances
+    Type: String
+    ConstraintDescription: >-
+      Must provide the name of key pair launched with EC2 instances
   AdminPassword:
     Description: 'The password for the default administrative user, Administrator '
     NoEcho: 'true'
@@ -270,6 +276,7 @@ Resources:
                 -OutFile C:\Users\Administrator\Desktop\Architecture.png
               waitAfterCompletion: '5'
     Properties:
+      KeyName: !Ref KeyPairName
       InstanceType: !Ref BastionSize
       IamInstanceProfile: !Ref PerfTestBastionServerInsProfile
       ImageId: !Ref WindowsLastestAmiID

@@ -7,6 +7,12 @@ Description: >-
 
 #Parameters
 Parameters:
+  KeyPairName:
+    Description: >-
+      Name of key pair launched with EC2 instances
+    Type: String
+    ConstraintDescription: >-
+      Must provide the name of key pair launched with EC2 instances
   AdminPassword:
     Description: >-
       The password for the Bastion Administrator. must contain exactly 8
@@ -104,6 +110,7 @@ Metadata:
       - Label:
           default: Perf Test Server - Configuration
         Parameters:
+          - KeyPairName
           - AdminPassword
           - RootPassword
           - EC2ModelBastion
@@ -145,6 +152,7 @@ Resources:
       TemplateURL: !Sub https://${CfnS3Bucket}.s3.amazonaws.com/${CfnS3Path}/PERF_TEST_NETWORK.yaml
       Parameters:
         DomainName: !Ref DomainName
+        KeyPairName: !Ref KeyPairName
       Tags:
         - Key: Env
           Value: PerfTest
@@ -157,6 +165,7 @@ Resources:
     Properties:
       TemplateURL: !Sub https://${CfnS3Bucket}.s3.amazonaws.com/${CfnS3Path}/PERF_TEST_BASTION.yaml
       Parameters:
+        KeyPairName: !Ref KeyPairName
         AdminPassword: !Ref AdminPassword
         BastionSize: !Ref EC2ModelBastion
         PerfTestVPC: !GetAtt 
@@ -179,6 +188,7 @@ Resources:
       TemplateURL: !Sub https://${CfnS3Bucket}.s3.amazonaws.com/${CfnS3Path}/PERF_TEST_OFBiz.yaml
       Parameters:
         DomainName: !Ref DomainName
+        KeyPairName: !Ref KeyPairName
         PerfTestVPC: !GetAtt 
           - PERFTESTNETWORK
           - Outputs.PerfTestVPC
@@ -201,6 +211,7 @@ Resources:
       TemplateURL: !Sub https://${CfnS3Bucket}.s3.amazonaws.com/${CfnS3Path}/SOURCE_WORDPRESS.yaml
       Parameters:
         DomainName: !Ref DomainName
+        KeyPairName: !Ref KeyPairName
         PerfTestVPC: !GetAtt 
           - PERFTESTNETWORK
           - Outputs.PerfTestVPC
