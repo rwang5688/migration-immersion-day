@@ -11,6 +11,7 @@ Parameters:
     Description: >-
       Name of key pair launched with EC2 instances
     Type: String
+    Default: <EC2 key pair name>
     ConstraintDescription: >-
       Must provide the name of key pair launched with EC2 instances
   AdminPassword:
