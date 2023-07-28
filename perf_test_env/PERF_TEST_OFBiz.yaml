@@ -17,12 +17,6 @@ Parameters:
     MinLength: '5'
     MaxLength: '16'
     Default: perftest.env
-  KeyPairName:
-    Description: >-
-      Name of key pair launched with EC2 instances
-    Type: String
-    ConstraintDescription: >-
-      Must provide the name of key pair launched with EC2 instances
   WEBInstanceType:
     Description: WebServer EC2 instance type
     Type: String
@@ -256,7 +250,6 @@ Resources:
             01_configure_OFBiz:
               command: /tmp/setup_postgres.sh
     Properties:
-      KeyName: !Ref KeyPairName
       ImageId: !FindInMap 
         - RegionMap
         - !Ref 'AWS::Region'
@@ -434,7 +427,6 @@ Resources:
                 enabled: 'true'
                 ensureRunning: 'true'
     Properties:
-      KeyName: !Ref KeyPairName
       ImageId: !FindInMap 
         - RegionMap
         - !Ref 'AWS::Region'
