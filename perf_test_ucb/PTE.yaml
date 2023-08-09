@@ -78,8 +78,26 @@ Parameters:
     Type: String
     MinLength: '5'
     MaxLength: '16'
-    Default: perftest.env
-  SourceCidrForRDP:
+    Default: is.berkeley.edu
+  SourceCidrForRDP1:
+    Description: >-
+      IP Cidr from which you are likely to RDP into the instances. You can add
+      rules later by modifying the created security groups e.g. 54.32.98.160/32
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: 0.0.0.0/0
+    AllowedPattern: '^([0-9]+\.){3}[0-9]+\/[0-9]+$'
+  SourceCidrForRDP2:
+    Description: >-
+      IP Cidr from which you are likely to RDP into the instances. You can add
+      rules later by modifying the created security groups e.g. 54.32.98.160/32
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: 0.0.0.0/0
+    AllowedPattern: '^([0-9]+\.){3}[0-9]+\/[0-9]+$'
+  SourceCidrForRDP3:
     Description: >-
       IP Cidr from which you are likely to RDP into the instances. You can add
       rules later by modifying the created security groups e.g. 54.32.98.160/32
@@ -95,7 +113,15 @@ Parameters:
   CfnS3Path:
     Description: S3 Path with CFN template files
     Type: String
-    Default: perf_test_env
+    Default: perf_test_ucb
+  PerfTestVPCId:
+    Description: VPC to place hosts.
+    Type: 'AWS::EC2::VPC::Id'
+    Default: vpc-12345678901234567
+  PerfTestPrivateSubnetId:
+    Description: Private Subnet to place hosts.
+    Type: 'AWS::EC2::Subnet::Id'
+    Default: subnet-12345678901234567
 
 #Metadata
 Metadata:
@@ -118,7 +144,11 @@ Metadata:
           default: Networking
         Parameters:
           - DomainName
-          - SourceCidrForRDP
+          - PerfTestVPCId
+          - PerfTestPrivateSubnetId
+          - SourceCidrForRDP1
+          - SourceCidrForRDP2
+          - SourceCidrForRDP3
       - Label:
           default: CloudFormation template location
         Parameters:
@@ -139,18 +169,6 @@ Conditions:
 
 #Resources
 Resources:
-  PERFTESTNETWORK:
-    Type: 'AWS::CloudFormation::Stack'
-    Properties:
-      TemplateURL: !Sub https://${CfnS3Bucket}.s3.amazonaws.com/${CfnS3Path}/PERF_TEST_NETWORK.yaml
-      Parameters:
-        DomainName: !Ref DomainName
-      Tags:
-        - Key: Env
-          Value: PerfTest
-        - Key: Stack
-          Value: PERFTESTNETWORK
-
   PERFTESTBASTION:
     Type: 'AWS::CloudFormation::Stack'
     Condition: CreateBastion
@@ -159,13 +177,11 @@ Resources:
       Parameters:
         AdminPassword: !Ref AdminPassword
         BastionSize: !Ref EC2ModelBastion
-        PerfTestVPC: !GetAtt 
-          - PERFTESTNETWORK
-          - Outputs.PerfTestVPC
-        PerfTestPublicSubnet: !GetAtt 
-          - PERFTESTNETWORK
-          - Outputs.PerfTestPublicSubnet
-        SourceCidrForRDP: !Ref SourceCidrForRDP
+        PerfTestVPCId: !Ref PerfTestVPCId
+        PerfTestPrivateSubnetId: !Ref PerfTestPrivateSubnetId
+        SourceCidrForRDP1: !Ref SourceCidrForRDP1
+        SourceCidrForRDP2: !Ref SourceCidrForRDP2
+        SourceCidrForRDP3: !Ref SourceCidrForRDP3
       Tags:
         - Key: Env
           Value: PerfTest
@@ -179,12 +195,8 @@ Resources:
       TemplateURL: !Sub https://${CfnS3Bucket}.s3.amazonaws.com/${CfnS3Path}/PERF_TEST_OFBiz.yaml
       Parameters:
         DomainName: !Ref DomainName
-        PerfTestVPC: !GetAtt 
-          - PERFTESTNETWORK
-          - Outputs.PerfTestVPC
-        PerfTestPrivateSubnet: !GetAtt 
-          - PERFTESTNETWORK
-          - Outputs.PerfTestPrivateSubnet
+        PerfTestVPCId: !Ref PerfTestVPCId
+        PerfTestPrivateSubnetId: !Ref PerfTestPrivateSubnetId
         WEBInstanceType: !Ref EC2ModelLinux
         DBPassword: !Ref RootPassword
         RootPassword: !Ref RootPassword
@@ -201,12 +213,8 @@ Resources:
       TemplateURL: !Sub https://${CfnS3Bucket}.s3.amazonaws.com/${CfnS3Path}/PERF_TEST_WORDPRESS.yaml
       Parameters:
         DomainName: !Ref DomainName
-        PerfTestVPC: !GetAtt 
-          - PERFTESTNETWORK
-          - Outputs.PerfTestVPC
-        PerfTestPrivateSubnet: !GetAtt 
-          - PERFTESTNETWORK
-          - Outputs.PerfTestPrivateSubnet
+        PerfTestVPCId: !Ref PerfTestVPCId
+        PerfTestPrivateSubnetId: !Ref PerfTestPrivateSubnetId
         WEBInstanceType: !Ref EC2ModelLinux
         DBPassword: !Ref RootPassword
         RootPassword: !Ref RootPassword

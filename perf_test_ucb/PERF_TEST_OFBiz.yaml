@@ -10,13 +10,13 @@ Description: >-
 Parameters:
   DomainName:
     Description: >-
-      The fully qualified name for the source VPC, such as perftest.env. The
+      The fully qualified name for the source VPC, such as is.berkeley.edu. The
       name doesn't need to be publicly resolvable; it will resolve inside your
       VPC only.
     Type: String
     MinLength: '5'
     MaxLength: '16'
-    Default: perftest.env
+    Default: is.berkeley.edu
   WEBInstanceType:
     Description: WebServer EC2 instance type
     Type: String
@@ -28,10 +28,10 @@ Parameters:
       - t3.medium
       - t3.large
     ConstraintDescription: must be a valid EC2 instance type.
-  PerfTestVPC:
+  PerfTestVPCId:
     Description: VPC to place OFBiz.
     Type: 'AWS::EC2::VPC::Id'
-  PerfTestPrivateSubnet:
+  PerfTestPrivateSubnetId:
     Description: Private Subnet in the perf test environment to place OFBiz.
     Type: 'AWS::EC2::Subnet::Id'
   SSHLocation:
@@ -75,7 +75,7 @@ Resources:
   WebServerSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      VpcId: !Ref PerfTestVPC
+      VpcId: !Ref PerfTestVPCId
       GroupDescription: >-
         Enable HTTP access via port 80 locked down to the load balancer + SSH
         access
@@ -107,7 +107,7 @@ Resources:
   DatabaseSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      VpcId: !Ref PerfTestVPC
+      VpcId: !Ref PerfTestVPCId
       GroupDescription: >-
         Enable mariadb access via port 3306 locked down to the load balancer +
         SSH access
@@ -263,7 +263,7 @@ Resources:
       NetworkInterfaces:
         - DeviceIndex: '0'
           AssociatePublicIpAddress: false
-          SubnetId: !Ref PerfTestPrivateSubnet
+          SubnetId: !Ref PerfTestPrivateSubnetId
           GroupSet:
             - !Ref DatabaseSecurityGroup
       UserData: 
@@ -386,7 +386,7 @@ Resources:
                   sed -i 's/jdbc-password="ofbiz"/jdbc-password="${DBPassword}"/g' $ofbizconfig
                   sed -i 's/127.0.0.1/ofbiz-db.${DomainName}/g' $ofbizconfig
                   ofbizsecurity=/opt/apache-ofbiz-18.12.05/framework/security/config/security.properties
-                  sed -i 's/host-headers-allowed=/host-headers-allowed=ofbiz-web,ofbiz-web.perftest.env,perftest.env/g' $ofbizsecurity
+                  sed -i 's/host-headers-allowed=/host-headers-allowed=ofbiz-web,ofbiz-web.is.berkeley.edu,is.berkeley.edu/g' $ofbizsecurity
               mode: '000500'
               owner: root
               group: root
@@ -440,7 +440,7 @@ Resources:
       NetworkInterfaces:
         - DeviceIndex: '0'
           AssociatePublicIpAddress: false
-          SubnetId: !Ref PerfTestPrivateSubnet
+          SubnetId: !Ref PerfTestPrivateSubnetId
           GroupSet:
             - !Ref WebServerSecurityGroup
       UserData: 

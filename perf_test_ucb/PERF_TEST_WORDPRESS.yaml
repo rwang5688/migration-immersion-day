@@ -11,13 +11,13 @@ Description: >-
 Parameters:
   DomainName:
     Description: >-
-      The fully qualified name for the source VPC, such as perftest.env. The
+      The fully qualified name for the source VPC, such as is.berkeley.edu. The
       name doesn't need to be publicly resolvable; it will resolve inside your
       VPC only.
     Type: String
     MinLength: '5'
     MaxLength: '16'
-    Default: perftest.env
+    Default: is.berkeley.edu
   WEBInstanceType:
     Description: WebServer EC2 instance type
     Type: String
@@ -29,10 +29,10 @@ Parameters:
       - t3.medium
       - t3.large
     ConstraintDescription: must be a valid EC2 instance type.
-  PerfTestVPC:
+  PerfTestVPCId:
     Description: VPC to place Wordpress.
     Type: 'AWS::EC2::VPC::Id'
-  PerfTestPrivateSubnet:
+  PerfTestPrivateSubnetId:
     Description: Private Subnet to place Wordpress.
     Type: 'AWS::EC2::Subnet::Id'
   SSHLocation:
@@ -94,7 +94,7 @@ Resources:
   WebServerSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      VpcId: !Ref PerfTestVPC
+      VpcId: !Ref PerfTestVPCId
       GroupDescription: Enable HTTP access via port 80 locked down to the load balancer + SSH access
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -112,7 +112,7 @@ Resources:
   DatabaseSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
-      VpcId: !Ref PerfTestVPC
+      VpcId: !Ref PerfTestVPCId
       GroupDescription: Enable mariadb access via port 3306 locked down to the load balancer + SSH access
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -263,7 +263,7 @@ Resources:
       NetworkInterfaces:
         - DeviceIndex: '0'
           AssociatePublicIpAddress: false
-          SubnetId: !Ref PerfTestPrivateSubnet
+          SubnetId: !Ref PerfTestPrivateSubnetId
           GroupSet:
             - !Ref DatabaseSecurityGroup
       UserData: 
@@ -423,7 +423,7 @@ Resources:
       NetworkInterfaces:
         - DeviceIndex: '0'
           AssociatePublicIpAddress: false
-          SubnetId: !Ref PerfTestPrivateSubnet
+          SubnetId: !Ref PerfTestPrivateSubnetId
           GroupSet:
             - !Ref WebServerSecurityGroup
       UserData: 
