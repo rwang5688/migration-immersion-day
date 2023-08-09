@@ -20,13 +20,31 @@ Parameters:
       - t3.small
       - t3.large
     Default: t3.medium
-  PerfTestVPC:
+  PerfTestVPCId:
     Description: VPC to place Bastion Host. Preferred is Perf Test Environment
     Type: 'AWS::EC2::VPC::Id'
-  PerfTestPublicSubnet:
-    Description: Public Subnet to place Bastion Host. Preferred is Perf Test Environment
+  PerfTestPrivateSubnetId:
+    Description: Private Subnet to place Bastion Host. Preferred is Perf Test Environment
     Type: 'AWS::EC2::Subnet::Id'
-  SourceCidrForRDP:
+  SourceCidrForRDP1:
+    Description: >-
+      IP Cidr from which you are likely to RDP into the instances. You can add
+      rules later by modifying the created security groups e.g. 54.32.98.160/32
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: 0.0.0.0/0
+    AllowedPattern: '^([0-9]+\.){3}[0-9]+\/[0-9]+$'
+  SourceCidrForRDP2:
+    Description: >-
+      IP Cidr from which you are likely to RDP into the instances. You can add
+      rules later by modifying the created security groups e.g. 54.32.98.160/32
+    Type: String
+    MinLength: '9'
+    MaxLength: '18'
+    Default: 0.0.0.0/0
+    AllowedPattern: '^([0-9]+\.){3}[0-9]+\/[0-9]+$'
+  SourceCidrForRDP3:
     Description: >-
       IP Cidr from which you are likely to RDP into the instances. You can add
       rules later by modifying the created security groups e.g. 54.32.98.160/32
@@ -49,12 +67,20 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Enable RDP
-      VpcId: !Ref PerfTestVPC
+      VpcId: !Ref PerfTestVPCId
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 3389
           ToPort: 3389
-          CidrIp: !Ref SourceCidrForRDP
+          CidrIp: !Ref SourceCidrForRDP1
+        - IpProtocol: tcp
+          FromPort: 3389
+          ToPort: 3389
+          CidrIp: !Ref SourceCidrForRDP2
+        - IpProtocol: tcp
+          FromPort: 3389
+          ToPort: 3389
+          CidrIp: !Ref SourceCidrForRDP3
         - IpProtocol: icmp
           FromPort: 8
           ToPort: -1
@@ -276,10 +302,10 @@ Resources:
       NetworkInterfaces:
         - GroupSet:
             - !Ref BastionSecurityGroup
-          AssociatePublicIpAddress: true
+          AssociatePublicIpAddress: false
           DeviceIndex: '0'
           DeleteOnTermination: true
-          SubnetId: !Ref PerfTestPublicSubnet
+          SubnetId: !Ref PerfTestPrivateSubnetId
       Tags:
         - Key: Environment
           Value: PerfTest
